@@ -2,6 +2,8 @@ class Board
   DIGITS = '123456789'.freeze
   MARKS = %w[X O].freeze
 
+  attr_reader :board
+
   def initialize
     @board = Array.new(3) { Array.new(3) }
     n = 1
@@ -27,6 +29,13 @@ class Board
     @board[location / 3][location % 3] = symbol if correct_placement?(symbol, location)
   end
 
+  # For resetting a move
+  def undo_place(location)
+    # location expected to be between 1 and 9
+    location -= 1
+    @board[location / 3][location % 3] = (location + 1).to_s
+  end
+
   def correct_placement?(symbol, location)
     # location expected to be between 0 and 8
     return false unless MARKS.include?(symbol)
@@ -36,7 +45,7 @@ class Board
     true
   end
 
-  # Returns the symbol of the winner is someone won or 'tie' if there's a tie
+  # Returns the symbol of the winner if someone won or 'tie' if there's a tie
   # Returns nil otherwise
   def detect_winner
     (0..2).each do |i|
@@ -114,12 +123,77 @@ class ComputerPlayer < Player
   private
 
   def get_move(board)
-    while true
-      move = rand(1..9)
-      break if board.correct_placement?(@symbol, move - 1)
+    best_val = nil
+    best_moves = []
+
+    moves = generate_moves(board)
+    # When the computer gets to go first
+    return (1..9).to_a.sample if moves.length == 9
+
+    moves.each do |move|
+      board.place(@symbol, move)
+      move_val = minimax(board, 0, false)
+      board.undo_place(move)
+
+      if best_val.nil? || move_val > best_val
+        best_moves = [move]
+        best_val = move_val
+      elsif move_val == best_val
+        best_moves << move
+      end
     end
 
-    move
+    # p best_moves
+
+    best_moves.sample
+  end
+
+  def generate_moves(board)
+    moves = board.board.flatten
+    moves.delete(Board::MARKS[0])
+    moves.delete(Board::MARKS[1])
+    moves.map { |move| move.to_i }
+  end
+
+  def evaluate(board)
+    return 10 if board.detect_winner == @symbol
+    return 0 if board.detect_winner.nil? || board.detect_winner == 'tie'
+
+    -10 # If opponent won the board
+  end
+
+  def minimax(board, depth, is_max)
+    score = evaluate(board)
+
+    # If maximizer won
+    return score - depth if score == 10
+    # if minimizer won
+    return score + depth if score == -10
+
+    return 0 if board.detect_winner == 'tie'
+
+    opponent_symbol = Board::MARKS[0] if @symbol == Board::MARKS[1]
+    opponent_symbol = Board::MARKS[1] if @symbol == Board::MARKS[0]
+
+    if is_max
+      best = -1000
+      moves = generate_moves(board)
+      moves.each do |move|
+        board.place(@symbol, move)
+        best = [best, minimax(board, depth + 1, !is_max)].max
+        board.undo_place(move)
+      end
+    else
+      best = 1000
+      moves = generate_moves(board)
+      moves.each do |move|
+        board.place(opponent_symbol, move)
+        best = [best, minimax(board, depth + 1, !is_max)].min
+        board.undo_place(move)
+      end
+    end
+
+    best
   end
 end
 
