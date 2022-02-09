@@ -1,5 +1,8 @@
+# frozen_string_literal: true
+
+# Game board
 class Board
-  DIGITS = '123456789'.freeze
+  DIGITS = '123456789'
   MARKS = %w[X O].freeze
 
   attr_reader :board
@@ -62,27 +65,20 @@ class Board
   private
 
   def check_row(row)
-    if @board[row][0] == @board[row][1] && @board[row][0] == @board[row][2]
-      return @board[row][0]
-    end
+    return @board[row][0] if @board[row][0] == @board[row][1] && @board[row][0] == @board[row][2]
 
     nil
   end
 
   def check_column(col)
-    if @board[0][col] == @board[1][col] && @board[0][col] == @board[2][col]
-      return @board[0][col]
-    end
+    return @board[0][col] if @board[0][col] == @board[1][col] && @board[0][col] == @board[2][col]
 
     nil
   end
 
   def check_diagonals
-    if @board[0][0] == @board[1][1] && @board[0][0] == @board[2][2]
-      return @board[0][0]
-    elsif @board[0][2] == @board[1][1] && @board[0][2] == @board[2][0]
-      return @board[0][2]
-    end
+    return @board[0][0] if @board[0][0] == @board[1][1] && @board[0][0] == @board[2][2]
+    return @board[0][2] if @board[0][2] == @board[1][1] && @board[0][2] == @board[2][0]
 
     nil
   end
@@ -92,6 +88,7 @@ class Board
   end
 end
 
+# Human player
 class Player
   attr_reader :name, :symbol
 
@@ -113,6 +110,7 @@ class Player
   end
 end
 
+# Computer player
 class ComputerPlayer < Player
   def take_turn(board)
     move = get_move(board)
@@ -152,7 +150,7 @@ class ComputerPlayer < Player
     moves = board.board.flatten
     moves.delete(Board::MARKS[0])
     moves.delete(Board::MARKS[1])
-    moves.map { |move| move.to_i }
+    moves.map(&:to_i)
   end
 
   def evaluate(board)
@@ -197,6 +195,7 @@ class ComputerPlayer < Player
   end
 end
 
+# Main game class
 class Controller
   def initialize
     @b = Board.new
@@ -245,7 +244,7 @@ class Controller
     @p1 = Player.new('Player 1', Board::MARKS[0])
     @p2 = Player.new('Player 2', Board::MARKS[1])
 
-    while true
+    loop do
       @p1.take_turn(@b)
       break unless @b.detect_winner.nil?
 
@@ -273,7 +272,7 @@ class Controller
     @c = ComputerPlayer.new('Computer', Board::MARKS[0]) if symbol == Board::MARKS[1]
     @c = ComputerPlayer.new('Computer', Board::MARKS[1]) if symbol == Board::MARKS[0]
 
-    while true
+    loop do
       @p.take_turn(@b) if @p.symbol == Board::MARKS[0]
       @c.take_turn(@b) if @c.symbol == Board::MARKS[0]
       break unless @b.detect_winner.nil?
