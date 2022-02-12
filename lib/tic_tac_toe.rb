@@ -35,6 +35,8 @@ class Board
   # For resetting a move
   def undo_place(location)
     # location expected to be between 1 and 9
+    return unless DIGITS.include?(location.to_s)
+
     location -= 1
     @board[location / 3][location % 3] = (location + 1).to_s
   end
